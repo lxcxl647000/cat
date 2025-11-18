@@ -1,0 +1,11 @@
+{
+  "name": "Cat",
+  "uuid": "83864f57-3c40-4c24-abcb-e398ae4c9452",
+  "creator": {
+    "version": "3.8.6"
+  },
+  "dependencies": {
+    "js-base64": "^3.7.5",
+    "@tbmp/mp-cloud-sdk": "^1.5.10"
+  }
+}
