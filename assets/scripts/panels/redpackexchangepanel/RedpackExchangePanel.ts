@@ -1,4 +1,4 @@
-import { _decorator, Component, Label, Node, RichText, tween, Vec3, Widget } from 'cc';
+import { _decorator, Component, Label, Node, RichText, Tween, tween, Vec3, Widget } from 'cc';
 import { PanelComponent, PanelHideOption, PanelShowOption } from '../../framework/lib/router/PanelComponent';
 import { qc } from '../../framework/qc';
 import { PanelConfigs } from '../../configs/PanelConfigs';
@@ -67,6 +67,14 @@ export class RedpackExchangePanel extends PanelComponent {
         });
         RedpackExchangeMgr.ins.getExchangeRecordList((fake_tips: string[]) => {
             this._fake_tips = fake_tips;
+            this._fake_index = 0;
+            if (this._fake_tips.length > 0) {
+                this.tipsLabel.string = this._formatFakeTips(this._fake_tips[this._fake_index++]);
+                this._hideTips(this.tipsLabel);
+            }
+            else {
+                this.tipsLabel.string = '';
+            }
         });
         this.onBackToExchange();
         this._initName();
@@ -85,6 +93,10 @@ export class RedpackExchangePanel extends PanelComponent {
     }
 
     onBtnClose() {
+        Tween.stopAllByTarget(this.tipsLabel.node);
+        Tween.stopAllByTarget(this.tips2Label.node);
+        this.tipsLabel.node.position = this.tips_mid.position;
+        this.tips2Label.node.position = this.tips_bottom.position;
         qc.panelRouter.hide({ panel: PanelConfigs.redpackExchangePanel });
     }
 
@@ -167,35 +179,34 @@ export class RedpackExchangePanel extends PanelComponent {
         qc.panelRouter.showPanel({ panel: PanelConfigs.logListPanel, data: { active_num: 2 } });
     }
 
-    private _showFakeTips() {
-        if (this._fake_index > this._fake_tips.length) {
-            this._fake_index = 0;
-        }
-        this.tipsLabel.string = this._fake_tips[this._fake_index];
-        if (this._fake_index + 1 > this._fake_tips.length) {
-            this._fake_index = 0;
-        }
-        this.tips2Label.string = this._fake_tips[this._fake_index + 1];
-        this._fake_index++;
-
-        tween(this.tipsLabel.node)
-            .to(1, { position: this.tips_top.position }, { easing: 'sineInOut' })
+    private _showTips(label: RichText, tips: string) {
+        label.string = this._formatFakeTips(tips);
+        tween(label.node)
+            .to(1, { position: this.tips_mid.position }, { easing: 'sineInOut' })
             .call(() => {
-                this.tipsLabel.node.position = this.tips_bottom.position;
+                this._hideTips(label);
             })
             .start();
     }
 
-    private _tweenLabel(delay: number, node: Node, toPos: Vec3, cbPos: Vec3) {
+    private _hideTips(label: RichText) {
         this.scheduleOnce(() => {
-            tween(node)
-                .to(1, { position: toPos }, { easing: 'sineInOut' })
+            tween(label.node)
+                .to(1, { position: this.tips_top.position }, { easing: 'sineInOut' })
                 .call(() => {
-                    if (cbPos) {
-                        node.position = cbPos;
-                    }
+                    label.node.position = this.tips_bottom.position;
                 })
                 .start();
-        }, delay)
+            if (this._fake_index >= this._fake_tips.length) {
+                this._fake_index = 0;
+            }
+            this._showTips(label === this.tipsLabel ? this.tips2Label : this.tipsLabel, this._fake_tips[this._fake_index++]);
+        }, 2);
+    }
+
+    private _formatFakeTips(tips: string) {
+        let strArr = tips.split('兑换了');
+        let strArr2 = strArr[1].split('元');
+        return `${strArr[0]}兑换了<color=#FF4F1B>${strArr2[0]}</color>元${strArr2[1]}`;
     }
 }
